@@ -356,8 +356,8 @@
       </div>
     </div>
     <div class="round-row">
-      <label>Round</label>
-      <input type="number" id="roundNum" placeholder="Enter round number" min="1" />
+      <label>Batch</label>
+      <input type="number" id="roundNum" placeholder="Enter batch number" min="1" />
     </div>
     <button id="findBtn" onclick="findSlots()">Find common slots</button>
     <div class="loading-msg" id="loadingMsg">Fetching availability...</div>
@@ -549,7 +549,7 @@ async function findSlots() {
       function updateWaLink() {
         const idx = document.getElementById('slotSelect').value;
         const chosen = allCommon[idx];
-        const msg = `Hi! I checked our availability for Round ${roundNum}. We can play on ${chosen.day} during ${chosen.slot}. Does that work for you?`;
+        const msg = `Hi! I checked our availability for Batch ${roundNum}. We can play on ${chosen.day} during ${chosen.slot}. Does that work for you?`;
         document.getElementById('waBtn').href = `https://wa.me/?text=${encodeURIComponent(msg)}`;
       }
 
