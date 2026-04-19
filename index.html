@@ -556,10 +556,6 @@ async function findSlots() {
       updateWaLink();
       document.getElementById('slotSelect').addEventListener('change', updateWaLink);
     } else {
-      // Inside your search/render function...
-if (overlap.length > 0) {
-    // ... your existing logic for overlaps ...
-} else {
     const mySlotsText = mySlots.join(', ') || 'None';
     const oppSlotsText = oppSlots.join(', ') || 'None';
     
