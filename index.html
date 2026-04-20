@@ -333,6 +333,16 @@
     cursor: pointer;
   }
 
+  .player-picker { position: relative; }
+  .player-picker input { width: 100%; background: #111; border: 0.5px solid #333; border-radius: 10px; padding: 0.6rem 0.85rem; font-size: 14px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s; }
+  .player-picker input:focus { border-color: #555; }
+  .player-picker input::placeholder { color: #444; }
+  .player-selected { margin-top: 6px; font-size: 12px; color: #4ade80; font-weight: 500; min-height: 16px; padding-left: 2px; }
+  .player-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #1e1e1e; border: 0.5px solid #333; border-radius: 10px; max-height: 180px; overflow-y: auto; z-index: 100; display: none; }
+  .player-dropdown.open { display: block; }
+  .player-option { padding: 0.55rem 0.85rem; font-size: 13px; color: #e8e6e0; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.1s; }
+  .player-option:hover { background: #2a2a2a; }
+  .player-option .pnum { font-size: 11px; color: #555; font-family: 'DM Mono', monospace; min-width: 20px; }
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
 </style>
 </head>
@@ -347,12 +357,20 @@
   <div class="card">
     <div class="input-row">
       <div class="field">
-        <label>Your #</label>
-        <input type="number" id="myNum" placeholder="—" min="1" max="60" />
+        <label>Your Player</label>
+        <div class="player-picker" id="myPicker">
+          <input type="text" id="mySearch" placeholder="# or name..." autocomplete="off" />
+          <div class="player-dropdown" id="myDropdown"></div>
+          <div class="player-selected" id="mySelected"></div>
+        </div>
       </div>
       <div class="field">
-        <label>Opponent #</label>
-        <input type="number" id="oppNum" placeholder="—" min="1" max="60" />
+        <label>Opponent</label>
+        <div class="player-picker" id="oppPicker">
+          <input type="text" id="oppSearch" placeholder="# or name..." autocomplete="off" />
+          <div class="player-dropdown" id="oppDropdown"></div>
+          <div class="player-selected" id="oppSelected"></div>
+        </div>
       </div>
     </div>
     <div class="round-row">
@@ -367,7 +385,7 @@
   <div class="result-card" id="resultCard">
     <div class="result-header">
       <div class="result-names">
-        Player <strong id="rMyNum">—</strong> vs Player <strong id="rOppNum">—</strong>
+        <strong id="rMyNum">—</strong> vs <strong id="rOppNum">—</strong>
       </div>
       <div class="status-badge" id="statusBadge"></div>
     </div>
@@ -379,6 +397,74 @@
 const SHEET_ID = '1GlI41zACu2-1xbo6dZXFLMW6cqJrx0fEc2mywIRoeFg';
 const RESPONSES_TAB = 'Form Responses';
 const PLAYERS_TAB = 'Players';
+
+const PLAYERS = [
+  {num:1,name:'RS Bharathi'},{num:2,name:'Sidharth Manakil'},{num:3,name:'Koustuv Singha'},
+  {num:4,name:'Prahalad'},{num:5,name:'Magesh'},{num:6,name:'Aditya Doneria'},
+  {num:7,name:'Kingshuk'},{num:8,name:'Krish Mehta'},{num:9,name:'Krish Patel'},
+  {num:10,name:'Rahil'},{num:11,name:'Vinay'},{num:12,name:'Harsh Deep'},
+  {num:13,name:'Prahalad Gurram'},{num:14,name:'Kishan'},{num:15,name:'Gopikrishnan'},
+  {num:16,name:'Wishal'},{num:17,name:'KP'},{num:18,name:'Vijay K'},
+  {num:19,name:'Prajwal TV'},{num:20,name:'Pradeepknight'},{num:21,name:'Pradeep Kothawade'},
+  {num:22,name:'Sai Potla'},{num:23,name:'K Vithyasagar'},{num:24,name:'Laxmikant'},
+  {num:25,name:'Yuvaraj'},{num:26,name:'Navaneeth'},{num:27,name:'Milind Khot'},
+  {num:28,name:'Gurunath'},{num:29,name:'Janak'},{num:30,name:'Abhishek Jain'},
+  {num:31,name:'Dhruva'},{num:32,name:'Jhana'},{num:33,name:'Ashok'},
+  {num:34,name:'Kiran'},{num:35,name:'John Isaac'},{num:36,name:'V.Lambodaran'},
+  {num:37,name:'Murugan'},{num:38,name:'Mohan'},{num:39,name:'Karthik L N'},
+  {num:40,name:'Pranav Tatwawadi'},{num:41,name:'Elanchezhiyan'},{num:42,name:'Abinash'},
+  {num:43,name:'SJ Vithyashagar'},{num:44,name:'Uday'},{num:45,name:'Nitin Sharma'},
+  {num:46,name:'Ramesh'},{num:47,name:'Rakesh Ramini'},{num:48,name:'Sriram P'},
+  {num:49,name:'Dinesh'},{num:50,name:'Onkar'},{num:51,name:'Abhash Kumar'},
+  {num:52,name:'Shashank Gopalan'},{num:53,name:'Jayesh'},{num:54,name:'Pratik Kute'},
+  {num:55,name:'Srinivasa Reddy Ch'},{num:56,name:'Richard'},{num:57,name:'Chandan Kumar LN'},
+  {num:58,name:'Prasanna'},{num:59,name:'Janardhan'},{num:60,name:'Karthik Gopal'}
+];
+
+let myNumVal = '';
+let oppNumVal = '';
+
+function setupPicker(searchId, dropdownId, selectedId, onSelect) {
+  const input = document.getElementById(searchId);
+  const dropdown = document.getElementById(dropdownId);
+  const selected = document.getElementById(selectedId);
+  let chosen = null;
+
+  function renderDropdown(query) {
+    const q = query.trim().toLowerCase();
+    const results = q === '' ? [] : PLAYERS.filter(p =>
+      String(p.num).startsWith(q) || p.name.toLowerCase().includes(q)
+    ).slice(0, 8);
+    if (!results.length) { dropdown.classList.remove('open'); return; }
+    dropdown.innerHTML = results.map(p =>
+      `<div class="player-option" data-num="${p.num}">
+        <span class="pnum">${p.num}</span>${p.name}
+      </div>`
+    ).join('');
+    dropdown.classList.add('open');
+    dropdown.querySelectorAll('.player-option').forEach(el => {
+      el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        const num = el.dataset.num;
+        const player = PLAYERS.find(p => String(p.num) === num);
+        input.value = '';
+        selected.textContent = `#${player.num} — ${player.name}`;
+        dropdown.classList.remove('open');
+        chosen = player.num;
+        onSelect(player.num);
+      });
+    });
+  }
+
+  input.addEventListener('input', () => renderDropdown(input.value));
+  input.addEventListener('focus', () => { if (input.value) renderDropdown(input.value); });
+  input.addEventListener('blur', () => setTimeout(() => dropdown.classList.remove('open'), 150));
+
+  return () => chosen;
+}
+
+const getMyNum = setupPicker('mySearch', 'myDropdown', 'mySelected', v => { myNumVal = v; });
+const getOppNum = setupPicker('oppSearch', 'oppDropdown', 'oppSelected', v => { oppNumVal = v; });
 
 const SLOT_COLS = [
   '12am–1am','1am–2am','2am–3am','3am–4am','4am–5am','5am–6am',
@@ -457,8 +543,8 @@ function renderSlots(slots, dotClass, emptyMsg) {
 }
 
 async function findSlots() {
-  const myNum = document.getElementById('myNum').value.trim();
-  const oppNum = document.getElementById('oppNum').value.trim();
+  const myNum = String(myNumVal);
+  const oppNum = String(oppNumVal);
   const roundNum = document.getElementById('roundNum').value.trim();
   const errorMsg = document.getElementById('errorMsg');
   const loadingMsg = document.getElementById('loadingMsg');
@@ -468,8 +554,8 @@ async function findSlots() {
   errorMsg.style.display = 'none';
   resultCard.classList.remove('visible');
 
-  if (!myNum || !oppNum || !roundNum) {
-    errorMsg.textContent = 'Please fill in all three fields.';
+  if (!myNum || myNum === '' || !oppNum || oppNum === '' || !roundNum) {
+    errorMsg.textContent = 'Please select both players and enter a batch number.';
     errorMsg.style.display = 'block';
     return;
   }
@@ -511,8 +597,8 @@ async function findSlots() {
     const common = intersectSlots(mySlots, oppSlots);
     const hasCommon = common['Day 1'].length > 0 || common['Day 2'].length > 0;
 
-    document.getElementById('rMyNum').textContent = myNum;
-    document.getElementById('rOppNum').textContent = oppNum;
+    document.getElementById('rMyNum').textContent = PLAYERS.find(p => String(p.num) === myNum)?.name || `#${myNum}`;
+    document.getElementById('rOppNum').textContent = PLAYERS.find(p => String(p.num) === oppNum)?.name || `#${oppNum}`;
 
     const badge = document.getElementById('statusBadge');
     const body = document.getElementById('resultBody');
