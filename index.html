@@ -90,6 +90,35 @@
   .wa-btn:hover { opacity: 0.85; }
   .wa-btn:active { transform: scale(0.98); }
   .wa-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .status-controls { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
+  .status-controls label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #666; font-weight: 500; white-space: nowrap; }
+  .status-controls input { background: #1a1a1a; border: 0.5px solid #2e2e2e; border-radius: 8px; padding: 0.5rem 0.85rem; font-size: 14px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; outline: none; width: 80px; text-align: center; }
+  .status-controls button.small { padding: 0.5rem 1rem; background: #e8e6e0; color: #0f0f0f; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+  .status-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1.25rem; }
+  .stat-card { background: #1a1a1a; border: 0.5px solid #2e2e2e; border-radius: 12px; padding: 0.9rem 1rem; text-align: center; }
+  .stat-card .snum { font-size: 26px; font-weight: 600; }
+  .stat-card .slbl { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px; }
+  .stat-card.green .snum { color: #4ade80; }
+  .stat-card.orange .snum { color: #fb923c; }
+  .team-block { margin-bottom: 1rem; }
+  .team-name { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #666; font-weight: 500; margin-bottom: 0.5rem; padding: 0 0.25rem; }
+  .team-players { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+  .player-status-row { background: #1a1a1a; border: 0.5px solid #2e2e2e; border-radius: 9px; padding: 0.5rem 0.75rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: border-color 0.15s; }
+  .player-status-row:hover { border-color: #444; }
+  .player-status-row.submitted { border-color: #166534; background: #0a1f10; }
+  .psname { font-size: 12px; color: #e8e6e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
+  .psdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .psdot.done { background: #4ade80; }
+  .psdot.pending { background: #333; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #1a1a1a; border: 0.5px solid #2e2e2e; border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 340px; max-height: 80vh; overflow-y: auto; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 0.5px solid #2e2e2e; }
+  .modal-title { font-size: 15px; font-weight: 600; color: #e8e6e0; }
+  .modal-close { font-size: 18px; color: #555; cursor: pointer; padding: 0 4px; line-height: 1; }
+  .modal-close:hover { color: #e8e6e0; }
+  .modal-batch { font-size: 11px; color: #666; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -100,8 +129,9 @@
   </div>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('submit')">Submit Availability</div>
+    <div class="tab active" onclick="switchTab('submit')">Submit</div>
     <div class="tab" onclick="switchTab('find')">Find Slots</div>
+    <div class="tab" onclick="switchTab('status')">Status</div>
   </div>
 
   <!-- SUBMIT PANEL -->
@@ -172,6 +202,33 @@
       <div id="resultBody"></div>
     </div>
   </div>
+
+  <!-- STATUS PANEL -->
+  <div class="panel" id="panel-status">
+    <div class="status-controls">
+      <label>Batch</label>
+      <input type="number" id="statusBatch" value="1" min="1" />
+      <button class="small" onclick="loadStatus()">Load</button>
+    </div>
+    <div class="status-summary">
+      <div class="stat-card green"><div class="snum" id="statusDone">—</div><div class="slbl">Submitted</div></div>
+      <div class="stat-card orange"><div class="snum" id="statusPending">—</div><div class="slbl">Pending</div></div>
+    </div>
+    <div id="statusTeams"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalName"></div>
+        <div class="modal-batch" id="modalBatch"></div>
+      </div>
+      <span class="modal-close" onclick="closeModal()">x</span>
+    </div>
+    <div id="modalBody"></div>
+  </div>
 </div>
 
 <script>
@@ -228,11 +285,88 @@ function buildSlotGrid(containerId, day) {
 buildSlotGrid('day1grid', 'Day 1');
 buildSlotGrid('day2grid', 'Day 2');
 
+const TEAMS = [
+  {name:'Chennai Super Kings', players:['Prahalad Gurram','Milind Khot','Harsh Deep','V.Lambodaran','Ramesh','Dinesh']},
+  {name:'Delhi Capitals', players:['Murugan','KP','Magesh','Janak','Onkar','Prasanna']},
+  {name:'Gujarat Titans', players:['Sidharth Manakil','Pradeep Kothawade','Abhishek Jain','Ashok','Abinash','Karthik Gopal']},
+  {name:'Kolkata Knight Riders', players:['Kiran','Pradeepknight','Aditya Doneria','Yuvaraj','Chandan Kumar LN','Jayesh']},
+  {name:'Lucknow Super Giants', players:['Rahil','Prahalad','Vijay K','Sriram P','Pranav Tatwawadi','Nitin Sharma']},
+  {name:'Mumbai Indians', players:['Krish Patel','Sai Potla','Krish Mehta','Pratik Kute','Richard','Srinivasa Reddy Ch']},
+  {name:'Punjab Kings', players:['Karthik L N','K Vithyasagar','Koustuv Singha','Wishal','Abhash Kumar','SJ Vithyashagar']},
+  {name:'Rajasthan Royals', players:['Vinay','Gopikrishnan','Kingshuk','Elanchezhiyan','Janardhan','Jhana']},
+  {name:'Royal Challengers Bengaluru', players:['Prajwal TV','Kishan','Gurunath','John Isaac','Dhruva','Uday']},
+  {name:'Sunrisers Hyderabad', players:['Mohan','Laxmikant','Navaneeth','RS Bharathi','Rakesh Ramini','Shashank Gopalan']}
+];
+
 // Tab switching
 function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i === 0) === (tab === 'submit')));
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['submit','find','status'][i] === tab);
+  });
   document.getElementById('panel-submit').classList.toggle('active', tab === 'submit');
   document.getElementById('panel-find').classList.toggle('active', tab === 'find');
+  document.getElementById('panel-status').classList.toggle('active', tab === 'status');
+  if (tab === 'status') loadStatus();
+}
+
+let statusData = {};
+
+async function loadStatus() {
+  const batchNum = document.getElementById('statusBatch').value.trim();
+  if (!batchNum) return;
+  document.getElementById('statusTeams').innerHTML = '<p style="color:#555;font-size:13px;padding:0.5rem 0;">Loading...</p>';
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/availability?batch_num=eq.${batchNum}&select=player_num,slots`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    const data = await res.json();
+    statusData = {};
+    data.forEach(r => { statusData[r.player_num] = r.slots; });
+
+    const submitted = Object.keys(statusData).length;
+    document.getElementById('statusDone').textContent = submitted;
+    document.getElementById('statusPending').textContent = 60 - submitted;
+
+    const container = document.getElementById('statusTeams');
+    container.innerHTML = '';
+
+    TEAMS.forEach(team => {
+      const block = document.createElement('div');
+      block.className = 'team-block';
+      block.innerHTML = `<div class="team-name">${team.name}</div><div class="team-players" id="team_${team.name.replace(/\s/g,'_')}"></div>`;
+      container.appendChild(block);
+
+      const grid = block.querySelector('.team-players');
+      team.players.forEach(name => {
+        const player = PLAYERS.find(p => p.name === name);
+        if (!player) return;
+        const isDone = !!statusData[player.num];
+        const row = document.createElement('div');
+        row.className = `player-status-row${isDone ? ' submitted' : ''}`;
+        row.innerHTML = `<span class="psname">${name}</span><span class="psdot ${isDone ? 'done' : 'pending'}"></span>`;
+        if (isDone) {
+          row.addEventListener('click', () => openModal(player, batchNum, statusData[player.num]));
+        }
+        grid.appendChild(row);
+      });
+    });
+  } catch(err) {
+    document.getElementById('statusTeams').innerHTML = '<p style="color:#fb923c;font-size:13px;">Could not load data.</p>';
+  }
+}
+
+function openModal(player, batchNum, slots) {
+  document.getElementById('modalName').textContent = player.name;
+  document.getElementById('modalBatch').textContent = `Batch ${batchNum} availability`;
+  document.getElementById('modalBody').innerHTML = renderSlots(slots, 'dot-green');
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modalOverlay') || !e.target) {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
 }
 
 // Player picker
@@ -284,7 +418,7 @@ async function sbRequest(method, path, body) {
       'apikey': SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`,
       'Content-Type': 'application/json',
-      'Prefer': method === 'POST' ? 'return=minimal' : 'return=minimal'
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=minimal' : 'return=minimal'
     },
     body: body ? JSON.stringify(body) : undefined
   });
