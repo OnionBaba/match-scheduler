@@ -562,7 +562,6 @@ async function findSlots() {
   function formatSlots(slots) {
     return ['Day 1','Day 2']
       .map(day => {
-        if (!slots[day].length) return null;
         return `${day}: ${slots[day].join(', ')}`;
       })
       .filter(Boolean)
