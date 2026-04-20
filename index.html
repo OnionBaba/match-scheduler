@@ -491,17 +491,17 @@ async function findSlots() {
     const oppRow = getLatestResponse(rows, oppNum, roundNum);
 
     if (!myRow && !oppRow) {
-      errorMsg.textContent = `Neither player ${myNum} nor player ${oppNum} has submitted availability for round ${roundNum}.`;
+      errorMsg.textContent = `Neither player ${myNum} nor player ${oppNum} has submitted availability for batch ${roundNum}.`;
       errorMsg.style.display = 'block';
       return;
     }
     if (!myRow) {
-      errorMsg.textContent = `Player ${myNum} hasn't submitted availability for round ${roundNum} yet.`;
+      errorMsg.textContent = `Player ${myNum} hasn't submitted availability for batch ${roundNum} yet.`;
       errorMsg.style.display = 'block';
       return;
     }
     if (!oppRow) {
-      errorMsg.textContent = `Player ${oppNum} hasn't submitted availability for round ${roundNum} yet.`;
+      errorMsg.textContent = `Player ${oppNum} hasn't submitted availability for batch ${roundNum} yet.`;
       errorMsg.style.display = 'block';
       return;
     }
@@ -555,94 +555,80 @@ async function findSlots() {
 
       updateWaLink();
       document.getElementById('slotSelect').addEventListener('change', updateWaLink);
-    }
-      else {
-  badge.textContent = 'No overlap';
-  badge.className = 'status-badge status-none';
+    } else {
+      badge.textContent = 'No overlap';
+      badge.className = 'status-badge status-none';
 
-  const allOpp = [
-    ...oppSlots['Day 1'].map(s => ({ day: 'Day 1', slot: s })),
-    ...oppSlots['Day 2'].map(s => ({ day: 'Day 2', slot: s }))
-  ];
+      const oppAllSlots = [];
+      ['Day 1','Day 2'].forEach(day => {
+        oppSlots[day].forEach(slot => oppAllSlots.push({ day, slot }));
+      });
 
-  function formatSlots(slots) {
-    return ['Day 1','Day 2']
-      .map(day => {
-        if (!slots[day].length) return null;
-        return `${day}: ${slots[day].join(', ')}`;
-      })
-      .filter(Boolean)
-      .join(' | ');
-  }
+      const myAllSlots = [];
+      ['Day 1','Day 2'].forEach(day => {
+        mySlots[day].forEach(slot => myAllSlots.push({ day, slot }));
+      });
 
-  const options = allOpp.map((s, i) =>
-    `<option value="${i}">${s.day} — ${s.slot}</option>`
-  ).join('');
+      const oppOptions = oppAllSlots.map((s, i) =>
+        `<option value="${i}">${s.day} — ${s.slot}</option>`
+      ).join('');
 
-  body.innerHTML = `
-    <p class="no-slots-msg" style="margin-bottom:1rem;">
-      No common slots found. Try proposing a compromise or coordinate directly.
-    </p>
+      body.innerHTML = `
+        <p class="no-slots-msg" style="margin-bottom:1rem;">No common slots found. Choose how to reach out:</p>
+        <div class="opponent-slots">
+          <p class="slots-label">Opponent's availability</p>
+          ${renderSlots(oppSlots, 'dot-orange', 'Opponent has no slots marked.')}
+        </div>
+        <div class="slot-picker" style="margin-top:1.25rem;">
+          <p class="slot-picker-label" style="color:#fb923c;">Option A — I'll adjust to their slot</p>
+          <select id="oppSlotSelect">${oppOptions}</select>
+          <a id="waBtnA" class="wa-btn" href="#" target="_blank" style="margin-top:0.75rem; background:#2e1a0d; color:#fb923c; border-color:#9a3412;">
+            <svg class="wa-icon" viewBox="0 0 24 24" fill="#fb923c" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.122 1.528 5.855L0 24l6.335-1.508A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.877 9.877 0 01-5.034-1.378l-.361-.214-3.741.981.999-3.648-.235-.374A9.861 9.861 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118c5.466 0 9.882 4.415 9.882 9.882 0 5.466-4.416 9.882-9.882 9.882z"/>
+            </svg>
+            Propose their slot
+          </a>
+        </div>
+        <div class="slot-picker" style="margin-top:1rem;">
+          <p class="slot-picker-label" style="color:#888;">Option B — Ask for a middleground</p>
+          <a id="waBtnB" class="wa-btn" href="#" target="_blank" style="background:#1a1a1a; color:#888; border-color:#333;">
+            <svg class="wa-icon" viewBox="0 0 24 24" fill="#888" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.122 1.528 5.855L0 24l6.335-1.508A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.877 9.877 0 01-5.034-1.378l-.361-.214-3.741.981.999-3.648-.235-.374A9.861 9.861 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118c5.466 0 9.882 4.415 9.882 9.882 0 5.466-4.416 9.882-9.882 9.882z"/>
+            </svg>
+            Send both availabilities
+          </a>
+        </div>
+      `;
 
-    <div class="opponent-slots">
-      <p class="slots-label">Your availability</p>
-      ${renderSlots(mySlots, 'dot-green', 'You have no slots marked.')}
+      function updateWaBtnA() {
+        const idx = document.getElementById('oppSlotSelect').value;
+        const chosen = oppAllSlots[idx];
+        const msg = `Hi! I checked our availability for Batch ${roundNum} — no common slots yet. I can make ${chosen.day} ${chosen.slot} work if that's good for you?`;
+        document.getElementById('waBtnA').href = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+      }
 
-      <p class="slots-label" style="margin-top:1rem;">Opponent's availability</p>
-      ${renderSlots(oppSlots, 'dot-orange', 'Opponent has no slots marked.')}
-    </div>
+      const mySlotStr = ['Day 1','Day 2'].map(day => {
+        const s = mySlots[day];
+        return s.length ? `${day}: ${s.join(', ')}` : null;
+      }).filter(Boolean).join('\n');
 
-    ${allOpp.length ? `
-      <div class="slot-picker">
-        <p class="slot-picker-label">Propose opponent's slot</p>
-        <select id="oppSlotSelect">${options}</select>
+      const oppSlotStr = ['Day 1','Day 2'].map(day => {
+        const s = oppSlots[day];
+        return s.length ? `${day}: ${s.join(', ')}` : null;
+      }).filter(Boolean).join('\n');
 
-        <a id="waCompromiseBtn" class="wa-btn" href="#" target="_blank" style="margin-top:0.75rem;">
-          Propose this slot
-        </a>
-      </div>
-    ` : ''}
+      const middleMsg = `Hi! I checked our availability for Batch ${roundNum} — no overlap unfortunately.\n\nMy slots:\n${mySlotStr}\n\nYour slots:\n${oppSlotStr}\n\nCan we find a middleground?`;
+      document.getElementById('waBtnB').href = `https://wa.me/?text=${encodeURIComponent(middleMsg)}`;
 
-    <a id="waNegotiateBtn" class="wa-btn" href="#" target="_blank" style="margin-top:0.75rem;">
-      Send full availability
-    </a>
-  `;
-
-  // --- WhatsApp logic ---
-
-  const myFormatted = formatSlots(mySlots);
-  const oppFormatted = formatSlots(oppSlots);
-
-  const negotiateMsg = `Hi! It looks like we don't have overlapping slots for Batch ${roundNum}.
-
-My availability:
-${myFormatted}
-
-Your availability:
-${oppFormatted}
-
-Can we find a middle ground?`;
-
-  document.getElementById('waNegotiateBtn').href =
-    `https://wa.me/?text=${encodeURIComponent(negotiateMsg)}`;
-
-  if (allOpp.length) {
-    function updateCompromiseLink() {
-      const idx = document.getElementById('oppSlotSelect').value;
-      const chosen = allOpp[idx];
-
-      const msg = `Hi! I saw your availability for Batch ${roundNum}.
-I might be able to adjust — can we play on ${chosen.day} during ${chosen.slot}?`;
-
-      document.getElementById('waCompromiseBtn').href =
-        `https://wa.me/?text=${encodeURIComponent(msg)}`;
+      updateWaBtnA();
+      document.getElementById('oppSlotSelect').addEventListener('change', updateWaBtnA);
     }
 
-    updateCompromiseLink();
-    document.getElementById('oppSlotSelect')
-      .addEventListener('change', updateCompromiseLink);
-  }
-} catch (err) {
+    resultCard.classList.add('visible');
+
+  } catch (err) {
     errorMsg.textContent = 'Could not fetch data. Make sure the sheet is publicly accessible.';
     errorMsg.style.display = 'block';
     console.error(err);
