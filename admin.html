@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Match Scheduler</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: #0f0f0f; color: #e8e6e0; min-height: 100vh; padding: 2rem 1rem; }
+  .container { width: 100%; max-width: 700px; margin: 0 auto; }
+  .header { margin-bottom: 2rem; }
+  .header h1 { font-size: 13px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: #888; margin-bottom: 0.4rem; }
+  .header p { font-size: 26px; font-weight: 600; color: #e8e6e0; }
+
+  .login-card { background: #1a1a1a; border: 0.5px solid #2e2e2e; border-radius: 16px; padding: 1.5rem; max-width: 340px; }
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #666; margin-bottom: 0.5rem; font-weight: 500; }
+  .field input { width: 100%; background: #111; border: 0.5px solid #333; border-radius: 10px; padding: 0.65rem 1rem; font-size: 14px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s; }
+  .field input:focus { border-color: #555; }
+  .field input::placeholder { color: #444; }
+
+  button.primary { width: 100%; padding: 0.85rem; background: #e8e6e0; color: #0f0f0f; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity 0.15s; margin-top: 0.5rem; }
+  button.primary:hover { opacity: 0.88; }
+  button.primary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .msg { font-size: 13px; margin-top: 0.75rem; display: none; }
+  .msg.error { color: #fb923c; }
+  .msg.loading { color: #666; }
+
+  .dashboard { display: none; }
+  .controls { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .controls label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #666; font-weight: 500; }
+  .controls input { background: #1a1a1a; border: 0.5px solid #2e2e2e; border-radius: 8px; padding: 0.5rem 0.85rem; font-size: 14px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; outline: none; width: 100px; }
+  .controls button { padding: 0.5rem 1.25rem; background: #e8e6e0; color: #0f0f0f; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity 0.15s; }
+  .controls button:hover { opacity: 0.85; }
+
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+  .stat { background: #1a1a1a; border: 0.5px solid #2e2e2e; border-radius: 12px; padding: 1rem; text-align: center; }
+  .stat .num { font-size: 28px; font-weight: 600; }
+  .stat .lbl { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+  .stat.green .num { color: #4ade80; }
+  .stat.orange .num { color: #fb923c; }
+  .stat.gray .num { color: #888; }
+
+  .player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem; }
+  .player-row { background: #1a1a1a; border: 0.5px solid #2e2e2e; border-radius: 10px; padding: 0.65rem 0.9rem; display: flex; align-items: center; justify-content: space-between; }
+  .player-row .pinfo { display: flex; align-items: center; gap: 8px; }
+  .player-row .pnum { font-size: 11px; color: #555; font-family: 'DM Mono', monospace; }
+  .player-row .pname { font-size: 13px; color: #e8e6e0; }
+  .badge { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 20px; }
+  .badge.done { background: #0d2e1a; color: #4ade80; border: 0.5px solid #166534; }
+  .badge.pending { background: #2a2a2a; color: #555; border: 0.5px solid #333; }
+
+  .section-title { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #666; font-weight: 500; margin-bottom: 0.75rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Match Scheduler</h1>
+    <p>Organiser Dashboard</p>
+  </div>
+
+  <div class="login-card" id="loginCard">
+    <div class="field">
+      <label>Admin Password</label>
+      <input type="password" id="pwInput" placeholder="Enter password" />
+    </div>
+    <button class="primary" onclick="login()">Login</button>
+    <div class="msg error" id="loginError">Incorrect password.</div>
+  </div>
+
+  <div class="dashboard" id="dashboard">
+    <div class="controls">
+      <label>Batch</label>
+      <input type="number" id="batchInput" placeholder="1" min="1" value="1" />
+      <button onclick="loadBatch()">Load</button>
+    </div>
+
+    <div class="summary">
+      <div class="stat green"><div class="num" id="statDone">—</div><div class="lbl">Submitted</div></div>
+      <div class="stat orange"><div class="num" id="statPending">—</div><div class="lbl">Pending</div></div>
+      <div class="stat gray"><div class="num" id="statTotal">60</div><div class="lbl">Total</div></div>
+    </div>
+
+    <p class="section-title" id="batchLabel">Batch — status</p>
+    <div class="player-grid" id="playerGrid"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://huptrpixoyujpjwirzez.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1cHRycGl4b3l1anBqd2lyemV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NTUzMTAsImV4cCI6MjA5MjIzMTMxMH0.WY5Obu3v37olES5bbMet3wJTU0M3p0EnIDIwnYNgTFs';
+const ADMIN_PASSWORD = 'league2024';
+
+const PLAYERS = [
+  {num:1,name:'RS Bharathi'},{num:2,name:'Sidharth Manakil'},{num:3,name:'Koustuv Singha'},
+  {num:4,name:'Prahalad'},{num:5,name:'Magesh'},{num:6,name:'Aditya Doneria'},
+  {num:7,name:'Kingshuk'},{num:8,name:'Krish Mehta'},{num:9,name:'Krish Patel'},
+  {num:10,name:'Rahil'},{num:11,name:'Vinay'},{num:12,name:'Harsh Deep'},
+  {num:13,name:'Prahalad Gurram'},{num:14,name:'Kishan'},{num:15,name:'Gopikrishnan'},
+  {num:16,name:'Wishal'},{num:17,name:'KP'},{num:18,name:'Vijay K'},
+  {num:19,name:'Prajwal TV'},{num:20,name:'Pradeepknight'},{num:21,name:'Pradeep Kothawade'},
+  {num:22,name:'Sai Potla'},{num:23,name:'K Vithyasagar'},{num:24,name:'Laxmikant'},
+  {num:25,name:'Yuvaraj'},{num:26,name:'Navaneeth'},{num:27,name:'Milind Khot'},
+  {num:28,name:'Gurunath'},{num:29,name:'Janak'},{num:30,name:'Abhishek Jain'},
+  {num:31,name:'Dhruva'},{num:32,name:'Jhana'},{num:33,name:'Ashok'},
+  {num:34,name:'Kiran'},{num:35,name:'John Isaac'},{num:36,name:'V.Lambodaran'},
+  {num:37,name:'Murugan'},{num:38,name:'Mohan'},{num:39,name:'Karthik L N'},
+  {num:40,name:'Pranav Tatwawadi'},{num:41,name:'Elanchezhiyan'},{num:42,name:'Abinash'},
+  {num:43,name:'SJ Vithyashagar'},{num:44,name:'Uday'},{num:45,name:'Nitin Sharma'},
+  {num:46,name:'Ramesh'},{num:47,name:'Rakesh Ramini'},{num:48,name:'Sriram P'},
+  {num:49,name:'Dinesh'},{num:50,name:'Onkar'},{num:51,name:'Abhash Kumar'},
+  {num:52,name:'Shashank Gopalan'},{num:53,name:'Jayesh'},{num:54,name:'Pratik Kute'},
+  {num:55,name:'Srinivasa Reddy Ch'},{num:56,name:'Richard'},{num:57,name:'Chandan Kumar LN'},
+  {num:58,name:'Prasanna'},{num:59,name:'Janardhan'},{num:60,name:'Karthik Gopal'}
+];
+
+function login() {
+  const pw = document.getElementById('pwInput').value;
+  if (pw === ADMIN_PASSWORD) {
+    document.getElementById('loginCard').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadBatch();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+async function loadBatch() {
+  const batchNum = document.getElementById('batchInput').value.trim();
+  if (!batchNum) return;
+
+  document.getElementById('batchLabel').textContent = `Batch ${batchNum} — submission status`;
+  document.getElementById('playerGrid').innerHTML = '<p style="color:#555;font-size:13px;">Loading...</p>';
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/availability?batch_num=eq.${batchNum}&select=player_num`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  const data = await res.json();
+  const submitted = new Set(data.map(r => r.player_num));
+
+  const done = submitted.size;
+  const pending = 60 - done;
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statPending').textContent = pending;
+
+  const grid = document.getElementById('playerGrid');
+  grid.innerHTML = '';
+  PLAYERS.forEach(p => {
+    const isDone = submitted.has(p.num);
+    const div = document.createElement('div');
+    div.className = 'player-row';
+    div.innerHTML = `
+      <div class="pinfo">
+        <span class="pnum">${p.num}</span>
+        <span class="pname">${p.name}</span>
+      </div>
+      <span class="badge ${isDone ? 'done' : 'pending'}">${isDone ? 'Done' : 'Pending'}</span>`;
+    grid.appendChild(div);
+  });
+}
+
+document.getElementById('pwInput').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+document.getElementById('batchInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') loadBatch(); });
+</script>
+</body>
+</html>

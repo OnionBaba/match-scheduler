@@ -3,335 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Match Availability</title>
+<title>Match Scheduler</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: #0f0f0f; color: #e8e6e0; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+  .container { width: 100%; max-width: 460px; }
+  .header { margin-bottom: 2rem; }
+  .header h1 { font-size: 13px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: #888; margin-bottom: 0.4rem; }
+  .header p { font-size: 26px; font-weight: 600; color: #e8e6e0; line-height: 1.2; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: #0f0f0f;
-    color: #e8e6e0;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
-  }
+  .tabs { display: flex; gap: 0; margin-bottom: 1.25rem; background: #1a1a1a; border-radius: 12px; padding: 4px; border: 0.5px solid #2e2e2e; }
+  .tab { flex: 1; padding: 0.6rem; text-align: center; font-size: 13px; font-weight: 600; color: #555; cursor: pointer; border-radius: 9px; transition: all 0.15s; letter-spacing: 0.03em; }
+  .tab.active { background: #e8e6e0; color: #0f0f0f; }
 
-  .container {
-    width: 100%;
-    max-width: 460px;
-  }
+  .panel { display: none; }
+  .panel.active { display: block; }
 
-  .header {
-    margin-bottom: 2.5rem;
-  }
+  .card { background: #1a1a1a; border: 0.5px solid #2e2e2e; border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
 
-  .header h1 {
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #888;
-    margin-bottom: 0.5rem;
-  }
-
-  .header p {
-    font-size: 26px;
-    font-weight: 600;
-    color: #e8e6e0;
-    line-height: 1.2;
-  }
-
-  .card {
-    background: #1a1a1a;
-    border: 0.5px solid #2e2e2e;
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .input-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .field label {
-    display: block;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #666;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-  }
-
-  .field input {
-    width: 100%;
-    background: #111;
-    border: 0.5px solid #333;
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
-    font-size: 22px;
-    font-weight: 600;
-    color: #e8e6e0;
-    font-family: 'DM Mono', monospace;
-    text-align: center;
-    transition: border-color 0.15s;
-    outline: none;
-  }
-
-  .field input:focus {
-    border-color: #555;
-  }
-
-  .field input::placeholder {
-    color: #333;
-    font-size: 18px;
-  }
-
-  .round-row {
-    margin-bottom: 0;
-  }
-
-  .round-row label {
-    display: block;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #666;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-  }
-
-  .round-row input {
-    width: 100%;
-    background: #111;
-    border: 0.5px solid #333;
-    border-radius: 10px;
-    padding: 0.6rem 1rem;
-    font-size: 15px;
-    color: #e8e6e0;
-    font-family: 'DM Sans', sans-serif;
-    text-align: center;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .round-row input:focus {
-    border-color: #555;
-  }
-
-  .round-row input::placeholder {
-    color: #333;
-  }
-
-  button {
-    width: 100%;
-    padding: 0.9rem;
-    background: #e8e6e0;
-    color: #0f0f0f;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: 'DM Sans', sans-serif;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
-    margin-top: 1.25rem;
-  }
-
-  button:hover { opacity: 0.88; }
-  button:active { transform: scale(0.98); }
-  button:disabled { opacity: 0.3; cursor: not-allowed; }
-
-  .result-card {
-    background: #1a1a1a;
-    border: 0.5px solid #2e2e2e;
-    border-radius: 16px;
-    padding: 1.5rem;
-    display: none;
-  }
-
-  .result-card.visible { display: block; }
-
-  .result-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.25rem;
-    padding-bottom: 1rem;
-    border-bottom: 0.5px solid #2e2e2e;
-  }
-
-  .result-names {
-    font-size: 13px;
-    color: #888;
-  }
-
-  .result-names strong {
-    color: #e8e6e0;
-    font-weight: 600;
-  }
-
-  .status-badge {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 20px;
-  }
-
-  .status-found {
-    background: #0d2e1a;
-    color: #4ade80;
-    border: 0.5px solid #166534;
-  }
-
-  .status-none {
-    background: #2e1a0d;
-    color: #fb923c;
-    border: 0.5px solid #9a3412;
-  }
-
-  .slots-label {
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #666;
-    font-weight: 500;
-    margin-bottom: 0.75rem;
-  }
-
-  .slots-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-  }
-
-  .slot-item {
-    background: #111;
-    border: 0.5px solid #2e2e2e;
-    border-radius: 8px;
-    padding: 0.5rem 0.75rem;
-    font-size: 13px;
-    color: #e8e6e0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .slot-item .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .dot-green { background: #4ade80; }
-  .dot-orange { background: #fb923c; }
-
-  .slot-day {
-    font-size: 10px;
-    color: #666;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 0.4rem;
-    padding-top: 0.5rem;
-    grid-column: 1 / -1;
-  }
-
-  .no-slots-msg {
-    font-size: 14px;
-    color: #888;
-    line-height: 1.6;
-  }
-
-  .error-msg {
-    font-size: 13px;
-    color: #fb923c;
-    margin-top: 0.75rem;
-    text-align: center;
-    display: none;
-  }
-
-  .loading-msg {
-    font-size: 13px;
-    color: #666;
-    margin-top: 0.75rem;
-    text-align: center;
-    display: none;
-  }
-
-  .opponent-slots {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 0.5px solid #2e2e2e;
-  }
-
-  .wa-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    margin-top: 1rem;
-    padding: 0.75rem;
-    background: #0d2e1a;
-    color: #4ade80;
-    border: 0.5px solid #166534;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'DM Sans', sans-serif;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    text-decoration: none;
-    transition: opacity 0.15s, transform 0.1s;
-  }
-
-  .wa-btn:hover { opacity: 0.85; }
-  .wa-btn:active { transform: scale(0.98); }
-
-  .wa-icon {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-  }
-
-  .slot-picker {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 0.5px solid #2e2e2e;
-  }
-
-  .slot-picker-label {
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #666;
-    font-weight: 500;
-    margin-bottom: 0.6rem;
-  }
-
-  .slot-picker select {
-    width: 100%;
-    background: #111;
-    border: 0.5px solid #333;
-    border-radius: 10px;
-    padding: 0.65rem 1rem;
-    font-size: 14px;
-    color: #e8e6e0;
-    font-family: 'DM Sans', sans-serif;
-    outline: none;
-    cursor: pointer;
-  }
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #666; margin-bottom: 0.5rem; font-weight: 500; }
 
   .player-picker { position: relative; }
   .player-picker input { width: 100%; background: #111; border: 0.5px solid #333; border-radius: 10px; padding: 0.6rem 0.85rem; font-size: 14px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s; }
@@ -342,61 +33,150 @@
   .player-dropdown.open { display: block; }
   .player-option { padding: 0.55rem 0.85rem; font-size: 13px; color: #e8e6e0; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.1s; }
   .player-option:hover { background: #2a2a2a; }
-  .player-option .pnum { font-size: 11px; color: #555; font-family: 'DM Mono', monospace; min-width: 20px; }
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  .player-option .pnum { font-size: 11px; color: #555; font-family: 'DM Mono', monospace; min-width: 24px; }
+
+  input[type="number"] { width: 100%; background: #111; border: 0.5px solid #333; border-radius: 10px; padding: 0.6rem 1rem; font-size: 15px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; text-align: center; outline: none; transition: border-color 0.15s; }
+  input[type="number"]:focus { border-color: #555; }
+  input[type="number"]::placeholder { color: #444; }
+
+  .slots-section { margin-top: 0.5rem; }
+  .slots-section .day-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #666; font-weight: 500; margin-bottom: 0.6rem; margin-top: 1rem; display: block; }
+  .slots-grid-input { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+  .slot-check { display: flex; align-items: center; gap: 8px; background: #111; border: 0.5px solid #222; border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; user-select: none; }
+  .slot-check:hover { border-color: #444; }
+  .slot-check.checked { background: #0d2e1a; border-color: #166534; }
+  .slot-check input[type="checkbox"] { display: none; }
+  .slot-check .dot { width: 6px; height: 6px; border-radius: 50%; background: #333; flex-shrink: 0; transition: background 0.15s; }
+  .slot-check.checked .dot { background: #4ade80; }
+  .slot-check span { font-size: 12px; color: #aaa; transition: color 0.15s; }
+  .slot-check.checked span { color: #e8e6e0; }
+
+  .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+
+  button.primary { width: 100%; padding: 0.9rem; background: #e8e6e0; color: #0f0f0f; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; letter-spacing: 0.04em; cursor: pointer; transition: opacity 0.15s, transform 0.1s; margin-top: 1.25rem; }
+  button.primary:hover { opacity: 0.88; }
+  button.primary:active { transform: scale(0.98); }
+  button.primary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .msg { font-size: 13px; margin-top: 0.75rem; text-align: center; display: none; }
+  .msg.error { color: #fb923c; }
+  .msg.success { color: #4ade80; }
+  .msg.loading { color: #666; }
+
+  .result-card { background: #1a1a1a; border: 0.5px solid #2e2e2e; border-radius: 16px; padding: 1.5rem; display: none; margin-bottom: 1rem; }
+  .result-card.visible { display: block; }
+  .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 0.5px solid #2e2e2e; }
+  .result-names { font-size: 13px; color: #888; }
+  .result-names strong { color: #e8e6e0; font-weight: 600; }
+  .status-badge { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; }
+  .status-found { background: #0d2e1a; color: #4ade80; border: 0.5px solid #166534; }
+  .status-none { background: #2e1a0d; color: #fb923c; border: 0.5px solid #9a3412; }
+
+  .slots-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #666; font-weight: 500; margin-bottom: 0.75rem; }
+  .slots-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .slot-item { background: #111; border: 0.5px solid #2e2e2e; border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 13px; color: #e8e6e0; display: flex; align-items: center; gap: 6px; }
+  .slot-item .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: #4ade80; }
+  .dot-orange { background: #fb923c; }
+  .slot-day { font-size: 10px; color: #666; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 0.4rem; padding-top: 0.5rem; grid-column: 1 / -1; }
+  .no-slots-msg { font-size: 14px; color: #888; line-height: 1.6; }
+
+  .slot-picker { margin-top: 1rem; padding-top: 1rem; border-top: 0.5px solid #2e2e2e; }
+  .slot-picker-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #666; font-weight: 500; margin-bottom: 0.6rem; }
+  .slot-picker select { width: 100%; background: #111; border: 0.5px solid #333; border-radius: 10px; padding: 0.65rem 1rem; font-size: 14px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; outline: none; cursor: pointer; }
+  .opponent-slots { margin-top: 1rem; padding-top: 1rem; border-top: 0.5px solid #2e2e2e; }
+
+  .wa-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 0.75rem; padding: 0.75rem; background: #0d2e1a; color: #4ade80; border: 0.5px solid #166534; border-radius: 10px; font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif; letter-spacing: 0.04em; cursor: pointer; text-decoration: none; transition: opacity 0.15s, transform 0.1s; }
+  .wa-btn:hover { opacity: 0.85; }
+  .wa-btn:active { transform: scale(0.98); }
+  .wa-icon { width: 16px; height: 16px; flex-shrink: 0; }
 </style>
 </head>
 <body>
-
 <div class="container">
   <div class="header">
     <h1>League Scheduler</h1>
     <p>Find your<br>match slot.</p>
   </div>
 
-  <div class="card">
-    <div class="input-row">
-      <div class="field">
-        <label>Your Player</label>
-        <div class="player-picker" id="myPicker">
-          <input type="text" id="mySearch" placeholder="# or name..." autocomplete="off" />
-          <div class="player-dropdown" id="myDropdown"></div>
-          <div class="player-selected" id="mySelected"></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Opponent</label>
-        <div class="player-picker" id="oppPicker">
-          <input type="text" id="oppSearch" placeholder="# or name..." autocomplete="off" />
-          <div class="player-dropdown" id="oppDropdown"></div>
-          <div class="player-selected" id="oppSelected"></div>
-        </div>
-      </div>
-    </div>
-    <div class="round-row">
-      <label>Batch</label>
-      <input type="number" id="roundNum" placeholder="Enter batch number" min="1" />
-    </div>
-    <button id="findBtn" onclick="findSlots()">Find common slots</button>
-    <div class="loading-msg" id="loadingMsg">Fetching availability...</div>
-    <div class="error-msg" id="errorMsg"></div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('submit')">Submit Availability</div>
+    <div class="tab" onclick="switchTab('find')">Find Slots</div>
   </div>
 
-  <div class="result-card" id="resultCard">
-    <div class="result-header">
-      <div class="result-names">
-        <strong id="rMyNum">—</strong> vs <strong id="rOppNum">—</strong>
+  <!-- SUBMIT PANEL -->
+  <div class="panel active" id="panel-submit">
+    <div class="card">
+      <div class="field">
+        <label>Your Player</label>
+        <div class="player-picker" id="submitPicker">
+          <input type="text" id="submitSearch" placeholder="# or name..." autocomplete="off" />
+          <div class="player-dropdown" id="submitDropdown"></div>
+          <div class="player-selected" id="submitSelected"></div>
+        </div>
       </div>
-      <div class="status-badge" id="statusBadge"></div>
+      <div class="field">
+        <label>Batch Number</label>
+        <input type="number" id="submitBatch" placeholder="Enter batch number" min="1" />
+      </div>
+      <div class="slots-section">
+        <span class="day-label">Day 1</span>
+        <div class="slots-grid-input" id="day1grid"></div>
+        <span class="day-label">Day 2</span>
+        <div class="slots-grid-input" id="day2grid"></div>
+      </div>
+      <button class="primary" onclick="submitAvailability()">Submit Availability</button>
+      <div class="msg error" id="submitError"></div>
+      <div class="msg success" id="submitSuccess"></div>
+      <div class="msg loading" id="submitLoading"></div>
     </div>
-    <div id="resultBody"></div>
+  </div>
+
+  <!-- FIND PANEL -->
+  <div class="panel" id="panel-find">
+    <div class="card">
+      <div class="input-row">
+        <div class="field">
+          <label>Your Player</label>
+          <div class="player-picker" id="myPicker">
+            <input type="text" id="mySearch" placeholder="# or name..." autocomplete="off" />
+            <div class="player-dropdown" id="myDropdown"></div>
+            <div class="player-selected" id="mySelected"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Opponent</label>
+          <div class="player-picker" id="oppPicker">
+            <input type="text" id="oppSearch" placeholder="# or name..." autocomplete="off" />
+            <div class="player-dropdown" id="oppDropdown"></div>
+            <div class="player-selected" id="oppSelected"></div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Batch Number</label>
+        <input type="number" id="findBatch" placeholder="Enter batch number" min="1" />
+      </div>
+      <button class="primary" onclick="findSlots()">Find Common Slots</button>
+      <div class="msg error" id="findError"></div>
+      <div class="msg loading" id="findLoading"></div>
+    </div>
+
+    <div class="result-card" id="resultCard">
+      <div class="result-header">
+        <div class="result-names">
+          <strong id="rMyName">—</strong> <span style="color:#555">vs</span> <strong id="rOppName">—</strong>
+        </div>
+        <div class="status-badge" id="statusBadge"></div>
+      </div>
+      <div id="resultBody"></div>
+    </div>
   </div>
 </div>
 
 <script>
-const SHEET_ID = '1GlI41zACu2-1xbo6dZXFLMW6cqJrx0fEc2mywIRoeFg';
-const RESPONSES_TAB = 'Form Responses';
-const PLAYERS_TAB = 'Players';
+const SUPABASE_URL = 'https://huptrpixoyujpjwirzez.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1cHRycGl4b3l1anBqd2lyemV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NTUzMTAsImV4cCI6MjA5MjIzMTMxMH0.WY5Obu3v37olES5bbMet3wJTU0M3p0EnIDIwnYNgTFs';
 
 const PLAYERS = [
   {num:1,name:'RS Bharathi'},{num:2,name:'Sidharth Manakil'},{num:3,name:'Koustuv Singha'},
@@ -421,14 +201,47 @@ const PLAYERS = [
   {num:58,name:'Prasanna'},{num:59,name:'Janardhan'},{num:60,name:'Karthik Gopal'}
 ];
 
-let myNumVal = '';
-let oppNumVal = '';
+const SLOT_HOURS = [
+  '12am–1am','1am–2am','2am–3am','3am–4am','4am–5am','5am–6am',
+  '6am–7am','7am–8am','8am–9am','9am–10am','10am–11am','11am–12pm',
+  '12pm–1pm','1pm–2pm','2pm–3pm','3pm–4pm','4pm–5pm','5pm–6pm',
+  '6pm–7pm','7pm–8pm','8pm–9pm','9pm–10pm','10pm–11pm','11pm–12am'
+];
+
+// Build slot checkboxes
+function buildSlotGrid(containerId, day) {
+  const grid = document.getElementById(containerId);
+  SLOT_HOURS.forEach(hour => {
+    const id = `slot_${day}_${hour}`;
+    const div = document.createElement('div');
+    div.className = 'slot-check';
+    div.dataset.day = day;
+    div.dataset.hour = hour;
+    div.innerHTML = `<input type="checkbox" id="${id}" /><span class="dot"></span><span>${hour}</span>`;
+    div.addEventListener('click', () => {
+      div.classList.toggle('checked');
+      div.querySelector('input').checked = div.classList.contains('checked');
+    });
+    grid.appendChild(div);
+  });
+}
+buildSlotGrid('day1grid', 'Day 1');
+buildSlotGrid('day2grid', 'Day 2');
+
+// Tab switching
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i === 0) === (tab === 'submit')));
+  document.getElementById('panel-submit').classList.toggle('active', tab === 'submit');
+  document.getElementById('panel-find').classList.toggle('active', tab === 'find');
+}
+
+// Player picker
+let submitNumVal = '', myNumVal = '', oppNumVal = '';
 
 function setupPicker(searchId, dropdownId, selectedId, onSelect) {
   const input = document.getElementById(searchId);
   const dropdown = document.getElementById(dropdownId);
   const selected = document.getElementById(selectedId);
-  let chosen = null;
 
   function renderDropdown(query) {
     const q = query.trim().toLowerCase();
@@ -445,12 +258,10 @@ function setupPicker(searchId, dropdownId, selectedId, onSelect) {
     dropdown.querySelectorAll('.player-option').forEach(el => {
       el.addEventListener('mousedown', e => {
         e.preventDefault();
-        const num = el.dataset.num;
-        const player = PLAYERS.find(p => String(p.num) === num);
+        const player = PLAYERS.find(p => String(p.num) === el.dataset.num);
         input.value = '';
         selected.textContent = `#${player.num} — ${player.name}`;
         dropdown.classList.remove('open');
-        chosen = player.num;
         onSelect(player.num);
       });
     });
@@ -459,146 +270,134 @@ function setupPicker(searchId, dropdownId, selectedId, onSelect) {
   input.addEventListener('input', () => renderDropdown(input.value));
   input.addEventListener('focus', () => { if (input.value) renderDropdown(input.value); });
   input.addEventListener('blur', () => setTimeout(() => dropdown.classList.remove('open'), 150));
-
-  return () => chosen;
 }
 
-const getMyNum = setupPicker('mySearch', 'myDropdown', 'mySelected', v => { myNumVal = v; });
-const getOppNum = setupPicker('oppSearch', 'oppDropdown', 'oppSelected', v => { oppNumVal = v; });
+setupPicker('submitSearch', 'submitDropdown', 'submitSelected', v => { submitNumVal = v; });
+setupPicker('mySearch', 'myDropdown', 'mySelected', v => { myNumVal = v; });
+setupPicker('oppSearch', 'oppDropdown', 'oppSelected', v => { oppNumVal = v; });
 
-const SLOT_COLS = [
-  '12am–1am','1am–2am','2am–3am','3am–4am','4am–5am','5am–6am',
-  '6am–7am','7am–8am','8am–9am','9am–10am','10am–11am','11am–12pm',
-  '12pm–1pm','1pm–2pm','2pm–3pm','3pm–4pm','4pm–5pm','5pm–6pm',
-  '6pm–7pm','7pm–8pm','8pm–9pm','9pm–10pm','10pm–11pm','11pm–12am'
-];
-
-async function fetchSheet(tabName) {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tabName)}`;
-  const res = await fetch(url);
-  const text = await res.text();
-  const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
-  return json.table;
-}
-
-function parseRows(table) {
-  const headers = table.cols.map(c => (c.label || '').trim());
-  return table.rows.map(row => {
-    const obj = {};
-    row.c.forEach((cell, i) => {
-      obj[headers[i]] = cell ? (cell.v !== null && cell.v !== undefined ? String(cell.v).trim() : '') : '';
-    });
-    return obj;
+// Supabase helpers
+async function sbRequest(method, path, body) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=minimal' : 'return=minimal'
+    },
+    body: body ? JSON.stringify(body) : undefined
   });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Request failed');
+  }
+  if (res.status === 204 || res.headers.get('content-length') === '0') return null;
+  return res.json().catch(() => null);
 }
 
-function getLatestResponse(rows, playerNum, roundNum) {
-  const matches = rows.filter(r =>
-    String(r['Player Number']).trim() === String(playerNum).trim() &&
-    String(r['Round Number']).trim() === String(roundNum).trim()
-  );
-  if (!matches.length) return null;
-  return matches[matches.length - 1];
-}
+// Submit availability
+async function submitAvailability() {
+  const playerNum = submitNumVal;
+  const batchNum = document.getElementById('submitBatch').value.trim();
+  const errEl = document.getElementById('submitError');
+  const sucEl = document.getElementById('submitSuccess');
+  const loadEl = document.getElementById('submitLoading');
 
-function getAvailableSlots(row) {
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+
+  if (!playerNum) { errEl.textContent = 'Please select your player.'; errEl.style.display = 'block'; return; }
+  if (!batchNum) { errEl.textContent = 'Please enter a batch number.'; errEl.style.display = 'block'; return; }
+
   const slots = { 'Day 1': [], 'Day 2': [] };
-  SLOT_COLS.forEach(slot => {
-    const key = `Availability [${slot}]`;
-    const val = row[key] || '';
-    if (val.includes('Day 1')) slots['Day 1'].push(slot);
-    if (val.includes('Day 2')) slots['Day 2'].push(slot);
+  document.querySelectorAll('.slot-check.checked').forEach(el => {
+    slots[el.dataset.day].push(el.dataset.hour);
   });
-  return slots;
-}
 
-function intersectSlots(a, b) {
-  return {
-    'Day 1': a['Day 1'].filter(s => b['Day 1'].includes(s)),
-    'Day 2': a['Day 2'].filter(s => b['Day 2'].includes(s))
-  };
-}
-
-function renderSlots(slots, dotClass, emptyMsg) {
-  const d1 = slots['Day 1'];
-  const d2 = slots['Day 2'];
-  if (!d1.length && !d2.length) {
-    return `<p class="no-slots-msg">${emptyMsg}</p>`;
-  }
-  let html = '<div class="slots-grid">';
-  if (d1.length) {
-    html += `<span class="slot-day">Day 1</span>`;
-    d1.forEach(s => {
-      html += `<div class="slot-item"><span class="dot ${dotClass}"></span>${s}</div>`;
-    });
-  }
-  if (d2.length) {
-    html += `<span class="slot-day">Day 2</span>`;
-    d2.forEach(s => {
-      html += `<div class="slot-item"><span class="dot ${dotClass}"></span>${s}</div>`;
-    });
-  }
-  html += '</div>';
-  return html;
-}
-
-async function findSlots() {
-  const myNum = String(myNumVal);
-  const oppNum = String(oppNumVal);
-  const roundNum = document.getElementById('roundNum').value.trim();
-  const errorMsg = document.getElementById('errorMsg');
-  const loadingMsg = document.getElementById('loadingMsg');
-  const resultCard = document.getElementById('resultCard');
-  const btn = document.getElementById('findBtn');
-
-  errorMsg.style.display = 'none';
-  resultCard.classList.remove('visible');
-
-  if (!myNum || myNum === '' || !oppNum || oppNum === '' || !roundNum) {
-    errorMsg.textContent = 'Please select both players and enter a batch number.';
-    errorMsg.style.display = 'block';
+  if (!slots['Day 1'].length && !slots['Day 2'].length) {
+    errEl.textContent = 'Please select at least one slot.';
+    errEl.style.display = 'block';
     return;
   }
 
-  if (myNum === oppNum) {
-    errorMsg.textContent = 'Player numbers must be different.';
-    errorMsg.style.display = 'block';
-    return;
-  }
-
-  btn.disabled = true;
-  loadingMsg.style.display = 'block';
+  loadEl.textContent = 'Submitting...';
+  loadEl.style.display = 'block';
+  document.querySelector('#panel-submit button.primary').disabled = true;
 
   try {
-    const table = await fetchSheet(RESPONSES_TAB);
-    const rows = parseRows(table);
+    await sbRequest('POST', 'availability', {
+      player_num: parseInt(playerNum),
+      batch_num: parseInt(batchNum),
+      slots: slots
+    });
+    sucEl.textContent = 'Availability submitted! You can update it anytime by submitting again.';
+    sucEl.style.display = 'block';
+    // Reset checkboxes
+    document.querySelectorAll('.slot-check.checked').forEach(el => {
+      el.classList.remove('checked');
+      el.querySelector('input').checked = false;
+    });
+  } catch (err) {
+    errEl.textContent = 'Submission failed. Please try again.';
+    errEl.style.display = 'block';
+    console.error(err);
+  } finally {
+    loadEl.style.display = 'none';
+    document.querySelector('#panel-submit button.primary').disabled = false;
+  }
+}
 
-    const myRow = getLatestResponse(rows, myNum, roundNum);
-    const oppRow = getLatestResponse(rows, oppNum, roundNum);
+// Find slots
+async function findSlots() {
+  const myNum = myNumVal;
+  const oppNum = oppNumVal;
+  const batchNum = document.getElementById('findBatch').value.trim();
+  const errEl = document.getElementById('findError');
+  const loadEl = document.getElementById('findLoading');
+  const resultCard = document.getElementById('resultCard');
 
-    if (!myRow && !oppRow) {
-      errorMsg.textContent = `Neither player ${myNum} nor player ${oppNum} has submitted availability for batch ${roundNum}.`;
-      errorMsg.style.display = 'block';
-      return;
-    }
-    if (!myRow) {
-      errorMsg.textContent = `Player ${myNum} hasn't submitted availability for batch ${roundNum} yet.`;
-      errorMsg.style.display = 'block';
-      return;
-    }
-    if (!oppRow) {
-      errorMsg.textContent = `Player ${oppNum} hasn't submitted availability for batch ${roundNum} yet.`;
-      errorMsg.style.display = 'block';
-      return;
-    }
+  errEl.style.display = 'none';
+  resultCard.classList.remove('visible');
 
-    const mySlots = getAvailableSlots(myRow);
-    const oppSlots = getAvailableSlots(oppRow);
-    const common = intersectSlots(mySlots, oppSlots);
+  if (!myNum || !oppNum || !batchNum) {
+    errEl.textContent = 'Please select both players and enter a batch number.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (String(myNum) === String(oppNum)) {
+    errEl.textContent = 'Player and opponent must be different.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  loadEl.textContent = 'Fetching availability...';
+  loadEl.style.display = 'block';
+  document.querySelector('#panel-find button.primary').disabled = true;
+
+  try {
+    const data = await sbRequest('GET', `availability?player_num=in.(${myNum},${oppNum})&batch_num=eq.${batchNum}&select=player_num,slots`);
+
+    const myRow = data?.find(r => String(r.player_num) === String(myNum));
+    const oppRow = data?.find(r => String(r.player_num) === String(oppNum));
+
+    const myName = PLAYERS.find(p => String(p.num) === String(myNum))?.name || `#${myNum}`;
+    const oppName = PLAYERS.find(p => String(p.num) === String(oppNum))?.name || `#${oppNum}`;
+
+    if (!myRow && !oppRow) { errEl.textContent = `Neither player has submitted availability for batch ${batchNum}.`; errEl.style.display = 'block'; return; }
+    if (!myRow) { errEl.textContent = `${myName} hasn't submitted availability for batch ${batchNum} yet.`; errEl.style.display = 'block'; return; }
+    if (!oppRow) { errEl.textContent = `${oppName} hasn't submitted availability for batch ${batchNum} yet.`; errEl.style.display = 'block'; return; }
+
+    const mySlots = myRow.slots;
+    const oppSlots = oppRow.slots;
+    const common = {
+      'Day 1': (mySlots['Day 1'] || []).filter(s => (oppSlots['Day 1'] || []).includes(s)),
+      'Day 2': (mySlots['Day 2'] || []).filter(s => (oppSlots['Day 2'] || []).includes(s))
+    };
     const hasCommon = common['Day 1'].length > 0 || common['Day 2'].length > 0;
 
-    document.getElementById('rMyNum').textContent = PLAYERS.find(p => String(p.num) === myNum)?.name || `#${myNum}`;
-    document.getElementById('rOppNum').textContent = PLAYERS.find(p => String(p.num) === oppNum)?.name || `#${oppNum}`;
+    document.getElementById('rMyName').textContent = myName;
+    document.getElementById('rOppName').textContent = oppName;
 
     const badge = document.getElementById('statusBadge');
     const body = document.getElementById('resultBody');
@@ -608,104 +407,77 @@ async function findSlots() {
       badge.className = 'status-badge status-found';
 
       const allCommon = [];
-      ['Day 1','Day 2'].forEach(day => {
-        common[day].forEach(slot => allCommon.push({ day, slot }));
-      });
+      ['Day 1','Day 2'].forEach(day => common[day].forEach(slot => allCommon.push({ day, slot })));
 
-      const options = allCommon.map((s, i) =>
-        `<option value="${i}">${s.day} — ${s.slot}</option>`
-      ).join('');
+      const options = allCommon.map((s, i) => `<option value="${i}">${s.day} — ${s.slot}</option>`).join('');
 
       body.innerHTML = `
         <p class="slots-label">Common slots</p>
-        ${renderSlots(common, 'dot-green', '')}
+        ${renderSlots(common, 'dot-green')}
         <div class="slot-picker">
           <p class="slot-picker-label">Share a slot on WhatsApp</p>
           <select id="slotSelect">${options}</select>
           <a id="waBtn" class="wa-btn" href="#" target="_blank" style="margin-top:0.75rem;">
-            <svg class="wa-icon" viewBox="0 0 24 24" fill="#4ade80" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.122 1.528 5.855L0 24l6.335-1.508A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.877 9.877 0 01-5.034-1.378l-.361-.214-3.741.981.999-3.648-.235-.374A9.861 9.861 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118c5.466 0 9.882 4.415 9.882 9.882 0 5.466-4.416 9.882-9.882 9.882z"/>
-            </svg>
-            Send to opponent
+            ${waIcon('#4ade80')} Send to opponent
           </a>
-        </div>
-      `;
+        </div>`;
 
       function updateWaLink() {
-        const idx = document.getElementById('slotSelect').value;
-        const chosen = allCommon[idx];
-        const msg = `Hi! I checked our availability for Batch ${roundNum}. We can play on ${chosen.day} during ${chosen.slot}. Does that work for you?`;
+        const chosen = allCommon[document.getElementById('slotSelect').value];
+        const msg = `Hi! I checked our availability for Batch ${batchNum}. We can play on ${chosen.day} during ${chosen.slot}. Does that work for you?`;
         document.getElementById('waBtn').href = `https://wa.me/?text=${encodeURIComponent(msg)}`;
       }
-
       updateWaLink();
       document.getElementById('slotSelect').addEventListener('change', updateWaLink);
+
     } else {
       badge.textContent = 'No overlap';
       badge.className = 'status-badge status-none';
 
       const oppAllSlots = [];
-      ['Day 1','Day 2'].forEach(day => {
-        oppSlots[day].forEach(slot => oppAllSlots.push({ day, slot }));
-      });
-
+      ['Day 1','Day 2'].forEach(day => (oppSlots[day] || []).forEach(slot => oppAllSlots.push({ day, slot })));
       const myAllSlots = [];
-      ['Day 1','Day 2'].forEach(day => {
-        mySlots[day].forEach(slot => myAllSlots.push({ day, slot }));
-      });
+      ['Day 1','Day 2'].forEach(day => (mySlots[day] || []).forEach(slot => myAllSlots.push({ day, slot })));
 
-      const oppOptions = oppAllSlots.map((s, i) =>
-        `<option value="${i}">${s.day} — ${s.slot}</option>`
-      ).join('');
+      const oppOptions = oppAllSlots.map((s, i) => `<option value="${i}">${s.day} — ${s.slot}</option>`).join('');
 
       body.innerHTML = `
         <p class="no-slots-msg" style="margin-bottom:1rem;">No common slots found. Choose how to reach out:</p>
         <div class="opponent-slots">
           <p class="slots-label">Opponent's availability</p>
-          ${renderSlots(oppSlots, 'dot-orange', 'Opponent has no slots marked.')}
+          ${renderSlots(oppSlots, 'dot-orange')}
         </div>
         <div class="slot-picker" style="margin-top:1.25rem;">
           <p class="slot-picker-label" style="color:#fb923c;">Option A — I'll adjust to their slot</p>
           <select id="oppSlotSelect">${oppOptions}</select>
-          <a id="waBtnA" class="wa-btn" href="#" target="_blank" style="margin-top:0.75rem; background:#2e1a0d; color:#fb923c; border-color:#9a3412;">
-            <svg class="wa-icon" viewBox="0 0 24 24" fill="#fb923c" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.122 1.528 5.855L0 24l6.335-1.508A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.877 9.877 0 01-5.034-1.378l-.361-.214-3.741.981.999-3.648-.235-.374A9.861 9.861 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118c5.466 0 9.882 4.415 9.882 9.882 0 5.466-4.416 9.882-9.882 9.882z"/>
-            </svg>
-            Propose their slot
+          <a id="waBtnA" class="wa-btn" href="#" target="_blank" style="margin-top:0.75rem;background:#2e1a0d;color:#fb923c;border-color:#9a3412;">
+            ${waIcon('#fb923c')} Propose their slot
           </a>
         </div>
         <div class="slot-picker" style="margin-top:1rem;">
           <p class="slot-picker-label" style="color:#888;">Option B — Ask for a middleground</p>
-          <a id="waBtnB" class="wa-btn" href="#" target="_blank" style="background:#1a1a1a; color:#888; border-color:#333;">
-            <svg class="wa-icon" viewBox="0 0 24 24" fill="#888" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.122 1.528 5.855L0 24l6.335-1.508A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.877 9.877 0 01-5.034-1.378l-.361-.214-3.741.981.999-3.648-.235-.374A9.861 9.861 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118c5.466 0 9.882 4.415 9.882 9.882 0 5.466-4.416 9.882-9.882 9.882z"/>
-            </svg>
-            Send both availabilities
+          <a id="waBtnB" class="wa-btn" href="#" target="_blank" style="background:#1a1a1a;color:#888;border-color:#333;">
+            ${waIcon('#888')} Send both availabilities
           </a>
-        </div>
-      `;
+        </div>`;
 
       function updateWaBtnA() {
-        const idx = document.getElementById('oppSlotSelect').value;
-        const chosen = oppAllSlots[idx];
-        const msg = `Hi! I checked our availability for Batch ${roundNum} — no common slots yet. I can make ${chosen.day} ${chosen.slot} work if that's good for you?`;
+        const chosen = oppAllSlots[document.getElementById('oppSlotSelect').value];
+        const msg = `Hi! I checked our availability for Batch ${batchNum} — no common slots. I can make ${chosen.day} ${chosen.slot} work. Does that suit you?`;
         document.getElementById('waBtnA').href = `https://wa.me/?text=${encodeURIComponent(msg)}`;
       }
 
       const mySlotStr = ['Day 1','Day 2'].map(day => {
-        const s = mySlots[day];
+        const s = mySlots[day] || [];
         return s.length ? `${day}: ${s.join(', ')}` : null;
       }).filter(Boolean).join('\n');
 
       const oppSlotStr = ['Day 1','Day 2'].map(day => {
-        const s = oppSlots[day];
+        const s = oppSlots[day] || [];
         return s.length ? `${day}: ${s.join(', ')}` : null;
       }).filter(Boolean).join('\n');
 
-      const middleMsg = `Hi! I checked our availability for Batch ${roundNum} — no overlap unfortunately.\n\nMy slots:\n${mySlotStr}\n\nYour slots:\n${oppSlotStr}\n\nCan we find a middleground?`;
+      const middleMsg = `Hi! I checked our availability for Batch ${batchNum} — no overlap.\n\nMy slots:\n${mySlotStr}\n\nYour slots:\n${oppSlotStr}\n\nCan we find a middleground?`;
       document.getElementById('waBtnB').href = `https://wa.me/?text=${encodeURIComponent(middleMsg)}`;
 
       updateWaBtnA();
@@ -715,18 +487,31 @@ async function findSlots() {
     resultCard.classList.add('visible');
 
   } catch (err) {
-    errorMsg.textContent = 'Could not fetch data. Make sure the sheet is publicly accessible.';
-    errorMsg.style.display = 'block';
+    errEl.textContent = 'Could not fetch data. Please try again.';
+    errEl.style.display = 'block';
     console.error(err);
   } finally {
-    btn.disabled = false;
-    loadingMsg.style.display = 'none';
+    loadEl.style.display = 'none';
+    document.querySelector('#panel-find button.primary').disabled = false;
   }
 }
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') findSlots();
-});
+function renderSlots(slots, dotClass) {
+  const d1 = slots['Day 1'] || [];
+  const d2 = slots['Day 2'] || [];
+  if (!d1.length && !d2.length) return `<p class="no-slots-msg">No slots marked.</p>`;
+  let html = '<div class="slots-grid">';
+  if (d1.length) { html += `<span class="slot-day">Day 1</span>`; d1.forEach(s => { html += `<div class="slot-item"><span class="dot ${dotClass}"></span>${s}</div>`; }); }
+  if (d2.length) { html += `<span class="slot-day">Day 2</span>`; d2.forEach(s => { html += `<div class="slot-item"><span class="dot ${dotClass}"></span>${s}</div>`; }); }
+  html += '</div>';
+  return html;
+}
+
+function waIcon(color) {
+  return `<svg class="wa-icon" viewBox="0 0 24 24" fill="${color}" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.122 1.528 5.855L0 24l6.335-1.508A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.877 9.877 0 01-5.034-1.378l-.361-.214-3.741.981.999-3.648-.235-.374A9.861 9.861 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118c5.466 0 9.882 4.415 9.882 9.882 0 5.466-4.416 9.882-9.882 9.882z"/></svg>`;
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') { if (document.getElementById('panel-submit').classList.contains('active')) submitAvailability(); else findSlots(); } });
 </script>
 </body>
 </html>
