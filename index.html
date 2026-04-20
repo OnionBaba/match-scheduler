@@ -556,20 +556,93 @@ async function findSlots() {
       updateWaLink();
       document.getElementById('slotSelect').addEventListener('change', updateWaLink);
     } else {
-      badge.textContent = 'No overlap';
-      badge.className = 'status-badge status-none';
-      body.innerHTML = `
-        <p class="no-slots-msg" style="margin-bottom:1rem;">No common slots found. Here's when your opponent is available — share yours and coordinate directly.</p>
-        <div class="opponent-slots">
-          <p class="slots-label">Opponent's availability</p>
-          ${renderSlots(oppSlots, 'dot-orange', 'Opponent has no slots marked.')}
-        </div>
-      `;
+      else {
+  badge.textContent = 'No overlap';
+  badge.className = 'status-badge status-none';
+
+  const allOpp = [
+    ...oppSlots['Day 1'].map(s => ({ day: 'Day 1', slot: s })),
+    ...oppSlots['Day 2'].map(s => ({ day: 'Day 2', slot: s }))
+  ];
+
+  function formatSlots(slots) {
+    return ['Day 1','Day 2']
+      .map(day => {
+        if (!slots[day].length) return null;
+        return `${day}: ${slots[day].join(', ')}`;
+      })
+      .filter(Boolean)
+      .join(' | ');
+  }
+
+  const options = allOpp.map((s, i) =>
+    `<option value="${i}">${s.day} — ${s.slot}</option>`
+  ).join('');
+
+  body.innerHTML = `
+    <p class="no-slots-msg" style="margin-bottom:1rem;">
+      No common slots found. Try proposing a compromise or coordinate directly.
+    </p>
+
+    <div class="opponent-slots">
+      <p class="slots-label">Your availability</p>
+      ${renderSlots(mySlots, 'dot-green', 'You have no slots marked.')}
+
+      <p class="slots-label" style="margin-top:1rem;">Opponent's availability</p>
+      ${renderSlots(oppSlots, 'dot-orange', 'Opponent has no slots marked.')}
+    </div>
+
+    ${allOpp.length ? `
+      <div class="slot-picker">
+        <p class="slot-picker-label">Propose opponent's slot</p>
+        <select id="oppSlotSelect">${options}</select>
+
+        <a id="waCompromiseBtn" class="wa-btn" href="#" target="_blank" style="margin-top:0.75rem;">
+          Propose this slot
+        </a>
+      </div>
+    ` : ''}
+
+    <a id="waNegotiateBtn" class="wa-btn" href="#" target="_blank" style="margin-top:0.75rem;">
+      Send full availability
+    </a>
+  `;
+
+  // --- WhatsApp logic ---
+
+  const myFormatted = formatSlots(mySlots);
+  const oppFormatted = formatSlots(oppSlots);
+
+  const negotiateMsg = `Hi! It looks like we don't have overlapping slots for Batch ${roundNum}.
+
+My availability:
+${myFormatted}
+
+Your availability:
+${oppFormatted}
+
+Can we find a middle ground?`;
+
+  document.getElementById('waNegotiateBtn').href =
+    `https://wa.me/?text=${encodeURIComponent(negotiateMsg)}`;
+
+  if (allOpp.length) {
+    function updateCompromiseLink() {
+      const idx = document.getElementById('oppSlotSelect').value;
+      const chosen = allOpp[idx];
+
+      const msg = `Hi! I saw your availability for Batch ${roundNum}.
+I might be able to adjust — can we play on ${chosen.day} during ${chosen.slot}?`;
+
+      document.getElementById('waCompromiseBtn').href =
+        `https://wa.me/?text=${encodeURIComponent(msg)}`;
     }
 
-    resultCard.classList.add('visible');
-
-  } catch (err) {
+    updateCompromiseLink();
+    document.getElementById('oppSlotSelect')
+      .addEventListener('change', updateCompromiseLink);
+  }
+} catch (err) {
     errorMsg.textContent = 'Could not fetch data. Make sure the sheet is publicly accessible.';
     errorMsg.style.display = 'block';
     console.error(err);
